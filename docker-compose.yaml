@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    container_name: shugar_blood_postgres
+    restart: always
+    env_file: .env
+    ports:
+      - "5433:5432"  # Измените на порт 5433, если 5432 уже занят
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER"]
+      interval: 10s
+      retries: 5
+      timeout: 5s
+
+  backend:
+    image: shugar_blood_backend  # Заменить на правильное имя
+    container_name: shugar_blood_backend
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: always
+    command: ["sh", "-c", "sleep 5 && python main.py"]
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+
+volumes:
+  postgres_data:

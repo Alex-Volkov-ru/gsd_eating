@@ -7,3 +7,5 @@ venv
 .vscode
 /bot.log
 bot.log
+shugar_blood_bot.log
+/shugar_blood_bot.log
