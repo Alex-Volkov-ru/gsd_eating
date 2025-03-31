@@ -6,6 +6,7 @@ from aiogram import types, F, Bot
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.jobstores.base import JobLookupError
 
 from keyboards.keyboards import timer_kb, registered_kb
 
@@ -123,10 +124,19 @@ async def send_repeated_reminders(chat_id: int, bot: Bot):
 
 async def handle_stop_button(message: types.Message):
     """Остановка таймера"""
-    stop_spam_flags[message.chat.id] = True  # Останавливаем спам
-    if message.chat.id in active_timers:
-        active_timers[message.chat.id].remove()
-        del active_timers[message.chat.id]
+    chat_id = message.chat.id
+    stop_spam_flags[chat_id] = True  # Останавливаем спам
+
+    if chat_id in active_timers:
+        try:
+            # Пытаемся удалить задание, если оно еще существует
+            active_timers[chat_id].remove()
+        except JobLookupError:
+            # Задание уже было удалено или выполнено
+            logging.info(f"Таймер для {chat_id} уже был завершен")
+        finally:
+            # В любом случае очищаем запись
+            active_timers.pop(chat_id, None)
 
     await message.answer(
         "⏹ Напоминания остановлены!", reply_markup=registered_kb)
