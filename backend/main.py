@@ -14,6 +14,7 @@ from database.init import init_db
 from handlers.register import router as register_router
 from handlers.start import router as start_router
 from handlers.timer import setup_timer_handlers, scheduler
+from handlers.about import setup_about_handlers
 
 load_dotenv()
 
@@ -42,6 +43,7 @@ async def on_startup(bot: Bot):
     """Действия при запуске бота"""
     await set_commands(bot)
     setup_timer_handlers(dp)
+    setup_about_handlers(dp)
     scheduler.start()
     try:
         await bot.send_message(TELEGRAM_ADMIN_ID, text='Бот запущен')

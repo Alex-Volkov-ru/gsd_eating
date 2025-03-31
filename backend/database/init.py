@@ -1,3 +1,5 @@
+# flake8: noqa: F401
+# Импорт моделей ДОЛЖЕН быть после создания Base
 from sqlalchemy import inspect
 
 from database.create import engine, Base
@@ -12,11 +14,10 @@ def check_tables():
 
 def init_db():
     """Инициализирует базу данных"""
-    # Импорт моделей ДОЛЖЕН быть после создания Base
-    from database.models.meal_type import MealType  # noqa: F401
-    from database.models.user import User  # noqa: F401
-    from database.models.meal import Meal  # noqa: F401
-    from database.models.blood import BloodRecord  # noqa: F401
-    from database.models.blood_type import BloodType  # noqa: F401
+    from database.models.meal_type import MealType
+    from database.models.user import User
+    from database.models.meal import Meal
+    from database.models.blood import BloodRecord
+    from database.models.blood_type import BloodType
 
     Base.metadata.create_all(bind=engine)

@@ -17,7 +17,7 @@ services:
       timeout: 5s
 
   backend:
-    image: shugar_blood_backend
+    build: ./backend
     container_name: shugar_blood_backend
     env_file: .env
     depends_on:
@@ -30,7 +30,7 @@ services:
       - /etc/localtime:/etc/localtime:ro
  
   filler:
-    image: shugar_blood_backend
+    build: ./backend
     env_file: .env
     depends_on:
       db:
