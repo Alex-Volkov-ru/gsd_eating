@@ -8,7 +8,7 @@ from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
 
 from keyboards.commands import set_commands
-from config.logging import setup_logging
+# from config.logging import setup_logging
 from utils.exceptions import HomeworkBotError
 from database.init import init_db
 from handlers.register import router as register_router
@@ -73,7 +73,7 @@ async def main() -> None:
 
 if __name__ == '__main__':
     try:
-        setup_logging()
+        # setup_logging()
         logging.info("="*50)
         logging.info("Запуск бота")
         asyncio.run(main())
