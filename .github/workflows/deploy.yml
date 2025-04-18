@@ -13,6 +13,8 @@ jobs:
       
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
       
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -34,12 +36,6 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           echo "${{ secrets.SERVER_IP }} $(ssh-keyscan -t rsa ${{ secrets.SERVER_IP }} 2>/dev/null)" >> ~/.ssh/known_hosts
 
-      - name: Copy compose file to server
-        run: |
-          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa \
-              docker-compose.yaml \
-              root@${{ secrets.SERVER_IP }}:/root/new_shugar_bot/
-
       - name: Deploy on server
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa root@${{ secrets.SERVER_IP }} << 'EOF'
@@ -48,11 +44,8 @@ jobs:
           # Останавливаем и обновляем контейнеры
           docker-compose down --remove-orphans
           docker-compose pull
-          docker-compose up -d --build
+          docker-compose up -d
           
           # Ждем готовности БД
           sleep 15
-          
-          # Запускаем filler однократно
-          docker-compose run --rm filler
           EOF

@@ -6,12 +6,12 @@ WORKDIR /app
 # Устанавливаем нужный часовой пояс
 RUN ln -sf /usr/share/zoneinfo/Europe/Moscow /etc/localtime && echo "Europe/Moscow" > /etc/timezone
 
-# Копируем только requirements.txt и устанавливаем зависимости
+# Копируем requirements и устанавливаем зависимости
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Копируем весь исходный код
+# Копируем ВСЕ файлы проекта
 COPY . .
 
 # Команда для запуска приложения
-CMD ["python", "main.py"]
+CMD ["sh", "-c", "sleep 5 && python main.py"]
