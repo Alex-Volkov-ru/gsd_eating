@@ -1,0 +1,58 @@
+name: Deploy Shugar Blood Bot
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Build and push Backend image
+        working-directory: ./backend
+        run: |
+          docker build -t ghcr.io/alex-volkov-ru/shugar_blood_backend:latest .
+          docker push ghcr.io/alex-volkov-ru/shugar_blood_backend:latest
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          echo "${{ secrets.SERVER_IP }} $(ssh-keyscan -t rsa ${{ secrets.SERVER_IP }} 2>/dev/null)" >> ~/.ssh/known_hosts
+
+      - name: Copy compose file to server
+        run: |
+          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa \
+              docker-compose.yaml \
+              root@${{ secrets.SERVER_IP }}:/root/new_shugar_bot/
+
+      - name: Deploy on server
+        run: |
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa root@${{ secrets.SERVER_IP }} << 'EOF'
+          cd /root/new_shugar_bot
+          
+          # Останавливаем и обновляем контейнеры
+          docker-compose down --remove-orphans
+          docker-compose pull
+          docker-compose up -d --build
+          
+          # Ждем готовности БД
+          sleep 15
+          
+          # Запускаем filler однократно
+          docker-compose run --rm filler
+          EOF

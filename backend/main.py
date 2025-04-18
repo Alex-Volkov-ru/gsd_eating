@@ -46,7 +46,8 @@ async def on_startup(bot: Bot):
     setup_about_handlers(dp)
     scheduler.start()
     try:
-        await bot.send_message(TELEGRAM_ADMIN_ID, text='Бот запущен')
+        await bot.send_message(TELEGRAM_ADMIN_ID,
+                               text='Бот запущен, через Деплой')
     except HomeworkBotError as e:
         logging.error(f"Ошибка бота: {str(e)}")
 

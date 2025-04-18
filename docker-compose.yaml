@@ -11,13 +11,13 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       retries: 5
       timeout: 5s
 
   backend:
-    build: ./backend
+    image: ghcr.io/alex-volkov-ru/shugar_blood_backend:latest
     container_name: shugar_blood_backend
     env_file: .env
     depends_on:
@@ -30,7 +30,7 @@ services:
       - /etc/localtime:/etc/localtime:ro
  
   filler:
-    build: ./backend
+    image: ghcr.io/alex-volkov-ru/shugar_blood_backend:latest
     env_file: .env
     depends_on:
       db:
