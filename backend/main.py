@@ -8,11 +8,14 @@ from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
 
 from keyboards.commands import set_commands
-# from config.logging import setup_logging
 from utils.exceptions import HomeworkBotError
 from database.init import init_db
-from handlers.register import router as register_router
 from handlers.start import router as start_router
+from handlers.register import router as register_router
+from handlers.data import router as data_router
+from handlers.blood import router as blood_router
+from handlers.food_stats import router as food_stats_router
+from handlers.stats_handler import router as stats_handler_router
 from handlers.timer import setup_timer_handlers, scheduler
 from handlers.about import setup_about_handlers
 
@@ -22,8 +25,12 @@ TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_ADMIN_ID = os.getenv('TELEGRAM_ADMIN_ID')
 
 dp = Dispatcher()
-dp.include_router(register_router)
 dp.include_router(start_router)
+dp.include_router(register_router)
+dp.include_router(data_router)
+dp.include_router(blood_router)
+dp.include_router(food_stats_router)
+dp.include_router(stats_handler_router)
 
 
 def check_tokens():
@@ -73,7 +80,6 @@ async def main() -> None:
 
 if __name__ == '__main__':
     try:
-        # setup_logging()
         logging.info("="*50)
         logging.info("Запуск бота")
         asyncio.run(main())

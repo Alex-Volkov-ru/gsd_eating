@@ -102,14 +102,14 @@ async def send_repeated_reminders(chat_id: int, bot: Bot):
     start_time = datetime.now()
 
     while (datetime.now() - start_time).seconds < REMINDER_DURATION:
-        if stop_spam_flags.get(chat_id, False):  # Проверка флага на остановку
+        if stop_spam_flags.get(chat_id, False):
             logging.info(f"Спам остановлен для {chat_id}.")
             break
 
         try:
             await bot.send_message(
                 chat_id, "⏰ Время сделать забор крови!",
-                reply_markup=timer_kb  # ОСТАВЛЯЕМ timer_kb ВО ВРЕМЯ СПАМА!
+                reply_markup=timer_kb
             )
             logging.info(f"Напоминание отправлено пользователю {chat_id}.")
         except Exception as e:
@@ -118,24 +118,22 @@ async def send_repeated_reminders(chat_id: int, bot: Bot):
         await asyncio.sleep(REMINDER_INTERVAL)
 
     logging.info(f"Завершение напоминаний для {chat_id}.")
-    active_timers.pop(chat_id, None)  # Удаляем таймер из списка
-    stop_spam_flags.pop(chat_id, None)  # Очищаем флаг
+    active_timers.pop(chat_id, None)
+    stop_spam_flags.pop(chat_id, None)
 
 
 async def handle_stop_button(message: types.Message):
     """Остановка таймера"""
     chat_id = message.chat.id
-    stop_spam_flags[chat_id] = True  # Останавливаем спам
+    stop_spam_flags[chat_id] = True
 
     if chat_id in active_timers:
         try:
-            # Пытаемся удалить задание, если оно еще существует
+
             active_timers[chat_id].remove()
         except JobLookupError:
-            # Задание уже было удалено или выполнено
             logging.info(f"Таймер для {chat_id} уже был завершен")
         finally:
-            # В любом случае очищаем запись
             active_timers.pop(chat_id, None)
 
     await message.answer(

@@ -9,9 +9,9 @@ class BloodRecord(Base):
     __tablename__ = "blood_records"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey('users.id'))  # Связь с пользователем
-    date_time = Column(DateTime, index=True)  # Дата и время замера
-    glucose = Column(Float)  # Уровень глюкозы в крови
+    user_id = Column(Integer, ForeignKey('users.id'))
+    date_time = Column(DateTime, index=True)
+    glucose = Column(Float)
     blood_type_id = Column(Integer, ForeignKey('blood_types.id'))
 
     user = relationship("User", back_populates="blood_records")

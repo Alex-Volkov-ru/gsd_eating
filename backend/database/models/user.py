@@ -10,8 +10,8 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    tg_id = Column(BigInteger, unique=True, index=True)  # ID в Telegram
-    username = Column(String, nullable=True)  # @username (необязательно)
+    tg_id = Column(BigInteger, unique=True, index=True)
+    username = Column(String, nullable=True)
     register_date = Column(DateTime, server_default=func.now())
 
     meals = relationship("Meal", back_populates="user")
