@@ -1,50 +1,98 @@
-name: Deploy Shugar Blood Bot
+name: 🚀 Deploy Shugar Blood Bot
 
 on:
   push:
     branches: [master]
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
-      
+    
     steps:
-      - uses: actions/checkout@v4
+      # ====================== CHECKOUT ======================
+      - name: 🔄 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ====================== BUILD STAGE ======================
+      - name: 🏗️ Build Docker image
+        working-directory: ./backend
+        run: |
+          echo "::group::📦 Building backend image"
+          docker build -t ghcr.io/alex-volkov-ru/shugar_blood_backend:latest .
+          echo "::endgroup::"
       
-      - name: Login to GitHub Container Registry
+      - name: 🚢 Login to GitHub Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: Build and push Backend image
+      - name: 📤 Push Docker image
         working-directory: ./backend
         run: |
-          docker build -t ghcr.io/alex-volkov-ru/shugar_blood_backend:latest .
+          echo "::group::📤 Pushing image to GHCR"
           docker push ghcr.io/alex-volkov-ru/shugar_blood_backend:latest
+          echo "::endgroup::"
 
-      - name: Setup SSH
+      # ====================== DEPLOY STAGE ======================
+      - name: 🔑 SSH Setup
         run: |
+          echo "::group::🔐 Setting up SSH"
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -t rsa ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+          echo "::endgroup::"
 
-      - name: Deploy on server
+      - name: 🛠️ Prepare Deployment
         run: |
+          echo "::group::🧹 Cleaning old containers"
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa root@${{ secrets.SERVER_IP }} \
+            "cd /root/new_shugar_bot && docker-compose down --remove-orphans"
+          echo "::endgroup::"
+          
+      - name: ⬇️ Pull Images on Server
+        run: |
+          echo "::group::🔽 Pulling new images"
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa root@${{ secrets.SERVER_IP }} \
+            "cd /root/new_shugar_bot && docker-compose pull"
+          echo "::endgroup::"
+
+      - name: 🚀 Deploy Application
+        run: |
+          echo "::group::🚀 Starting containers"
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa root@${{ secrets.SERVER_IP }} << 'EOF'
           set -e
           cd /root/new_shugar_bot
-          
-          # Обновляем контейнеры
-          docker-compose down --remove-orphans
-          docker-compose pull
           docker-compose up -d --build
-          
-          echo "Деплой успешно завершен"
-          docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
           EOF
+          echo "::endgroup::"
+
+      # ====================== VERIFICATION ======================
+      - name: ✅ Verify Deployment
+        run: |
+          echo "::group::🔍 Checking running containers"
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa root@${{ secrets.SERVER_IP }} \
+            "docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'"
+          echo "::endgroup::"
+          
+          echo "::group::🔄 Health Check"
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa root@${{ secrets.SERVER_IP }} \
+            "cd /root/new_shugar_bot && docker-compose ps"
+          echo "::endgroup::"
+
+      # ====================== NOTIFICATION ======================
+      - name: 📢 Deployment Status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" = 'success' ]; then
+            echo "::notice title=✅ Deployment Successful::The application was deployed successfully"
+          else
+            echo "::error title=❌ Deployment Failed::There were errors during deployment"
+          fi
