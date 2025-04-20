@@ -28,19 +28,6 @@ services:
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
- 
-  filler:
-    image: ghcr.io/alex-volkov-ru/shugar_blood_backend:latest
-    container_name: shugar_blood_filler
-    env_file: .env
-    depends_on:
-      db:
-        condition: service_healthy
-    restart: "no"
-    volumes:
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
-    command: ["sh", "-c", "python filler_script.py && exit 0"]
 
 volumes:
   postgres_data:

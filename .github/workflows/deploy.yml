@@ -32,30 +32,19 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          echo "${{ secrets.SERVER_IP }} $(ssh-keyscan -t rsa ${{ secrets.SERVER_IP }})" >> ~/.ssh/known_hosts
+          ssh-keyscan -t rsa ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
 
-      - name: Update and deploy
+      - name: Deploy on server
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa root@${{ secrets.SERVER_IP }} << 'EOF'
           set -e
           cd /root/new_shugar_bot
           
-          # Cleanup old containers
+          # Обновляем контейнеры
           docker-compose down --remove-orphans
-          docker rm -f shugar_blood_filler 2>/dev/null || true
-          
-          # Pull new images and start
           docker-compose pull
           docker-compose up -d --build
           
-          # Wait for DB
-          echo "Waiting for database..."
-          timeout 30s bash -c 'until docker exec shugar_blood_postgres pg_isready -U postgres; do sleep 2; done'
-          
-          # Run one-time filler
-          echo "Running filler..."
-          docker-compose run --rm filler || (docker rm -f shugar_blood_filler && exit 1)
-          
-          echo "Deployment successful"
+          echo "Деплой успешно завершен"
           docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
           EOF
