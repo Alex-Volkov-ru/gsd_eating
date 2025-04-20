@@ -32,43 +32,30 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          echo "${{ secrets.SERVER_IP }} $(ssh-keyscan -t rsa ${{ secrets.SERVER_IP }} 2>/dev/null)" >> ~/.ssh/known_hosts
+          echo "${{ secrets.SERVER_IP }} $(ssh-keyscan -t rsa ${{ secrets.SERVER_IP }})" >> ~/.ssh/known_hosts
 
-      - name: Copy compose file to server
-        run: |
-          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa \
-              docker-compose.yaml \
-              .env \
-              root@${{ secrets.SERVER_IP }}:/root/new_shugar_bot/
-
-      - name: Deploy on server
+      - name: Update and deploy
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa root@${{ secrets.SERVER_IP }} << 'EOF'
           set -e
           cd /root/new_shugar_bot
           
-          # Удаляем старый контейнер filler, если остался
+          # Cleanup old containers
+          docker-compose down --remove-orphans
           docker rm -f shugar_blood_filler 2>/dev/null || true
           
-          docker-compose down --remove-orphans
+          # Pull new images and start
           docker-compose pull
           docker-compose up -d --build
           
-
-          echo "Waiting for database to be ready..."
-          for i in {1..10}; do
-            if docker exec shugar_blood_postgres pg_isready -U postgres; then
-              break
-            fi
-            sleep 3
-          done
+          # Wait for DB
+          echo "Waiting for database..."
+          timeout 30s bash -c 'until docker exec shugar_blood_postgres pg_isready -U postgres; do sleep 2; done'
           
+          # Run one-time filler
           echo "Running filler..."
-          if ! docker-compose run --rm --name shugar_blood_filler filler; then
-            docker rm -f shugar_blood_filler 2>/dev/null || true
-            exit 1
-          fi
+          docker-compose run --rm filler || (docker rm -f shugar_blood_filler && exit 1)
           
-          echo "Deployment completed successfully"
+          echo "Deployment successful"
           docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
           EOF
