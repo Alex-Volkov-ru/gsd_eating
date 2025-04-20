@@ -62,7 +62,6 @@ def format_blood_message(records, period_name):
 
     message = f"📅 \\*Показатели сахара за {escape_markdown_v2(period_name)}\\*:\n\n"
 
-    # Сбор таблицы
     table_data = []
     for r in records:
         date_str = r['date'].strftime("%d.%m.%Y")
