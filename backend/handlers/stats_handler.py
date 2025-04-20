@@ -2,7 +2,7 @@ import logging
 
 from aiogram import Router, types, F
 from tabulate import tabulate
-from database.db_operations import escape_markdown_v2
+from handlers.blood_stats import escape_markdown_v2
 
 from keyboards.keyboards import registered_kb, get_stats_main_kb, get_blood_stats_kb
 
