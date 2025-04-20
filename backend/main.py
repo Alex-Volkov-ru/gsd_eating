@@ -18,6 +18,7 @@ from handlers.food_stats import router as food_stats_router
 from handlers.stats_handler import router as stats_handler_router
 from handlers.timer import setup_timer_handlers, scheduler
 from handlers.about import setup_about_handlers
+from handlers.blood_stats import router as blood_stats_router
 
 load_dotenv()
 
@@ -31,7 +32,7 @@ dp.include_router(data_router)
 dp.include_router(blood_router)
 dp.include_router(food_stats_router)
 dp.include_router(stats_handler_router)
-
+dp.include_router(blood_stats_router)
 
 def check_tokens():
     """Проверяет наличие всех необходимых токенов."""

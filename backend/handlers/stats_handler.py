@@ -1,6 +1,8 @@
 import logging
 
 from aiogram import Router, types, F
+from tabulate import tabulate
+from database.db_operations import escape_markdown_v2
 
 from keyboards.keyboards import registered_kb, get_stats_main_kb, get_blood_stats_kb
 
@@ -53,20 +55,27 @@ async def back_to_stats(callback: types.CallbackQuery):
         logger.error(f"Ошибка при возврате в меню статистики: {e}")
         await callback.answer("Произошла ошибка", show_alert=True)
 
-def format_blood_message(stats, period_name):
-    """Форматирует статистику в читаемое сообщение"""
-    if not stats:
-        return f"Нет данных за {period_name}"
-    
-    message = f"📊 Статистика сахара за {period_name}:\n\n"
-    message += f"• Средний уровень: {stats.get('avg', 0):.1f} ммоль/л\n"
-    message += f"• Минимальный: {stats.get('min', 0):.1f} ммоль/л\n"
-    message += f"• Максимальный: {stats.get('max', 0):.1f} ммоль/л\n"
-    message += f"• Всего измерений: {stats.get('count', 0)}\n"
+def format_blood_message(records, period_name):
+    """Форматирует только список записей сахара за период — дата, время, тип, значение"""
+    if not records:
+        return f"📊 Нет данных за {escape_markdown_v2(period_name)}"
 
-    if 'records' in stats:
-        message += "\nПоследние измерения:\n"
-        for record in stats['records']:
-            message += f"→ {record['time']} - {record['value']:.1f} ммоль/л\n"
-    
+    message = f"📅 \\*Показатели сахара за {escape_markdown_v2(period_name)}\\*:\n\n"
+
+    # Сбор таблицы
+    table_data = []
+    for r in records:
+        date_str = r['date'].strftime("%d.%m.%Y")
+        time_str = r['date'].strftime("%H:%M")
+        table_data.append([
+            escape_markdown_v2(date_str),
+            escape_markdown_v2(time_str),
+            escape_markdown_v2(r['type']),
+            f"{r['value']:.1f}"
+        ])
+
+    headers = ["Дата", "Время", "Тип после приема", "Уровень сахара"]
+    table = tabulate(table_data, headers=headers, tablefmt="grid")
+
+    message += f"```{table}```"
     return message
